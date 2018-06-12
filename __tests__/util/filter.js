@@ -2,6 +2,8 @@
 
 import {ignoreLinesToRegex, filterOverridenGitignores} from '../../src/util/filter.js';
 
+const path = require('path');
+
 test('ignoreLinesToRegex', () => {
   expect(
     ignoreLinesToRegex([
@@ -61,25 +63,56 @@ test('ignoreLinesToRegex', () => {
   ]);
 });
 
+const generateFilterOverridenGitignoresInput = (joinFn, baseDir) => [
+  {relative: '.gitignore', basename: '.gitignore', absolute: joinFn(baseDir, '.gitignore'), mtime: 0},
+  {relative: '.npmignore', basename: '.npmignore', absolute: joinFn(baseDir, '.npmignore'), mtime: 0},
+  {relative: 'docs', basename: 'lib', absolute: joinFn(baseDir, 'docs'), mtime: 0},
+  {relative: joinFn('docs', 'file.txt'), basename: 'file.txt', absolute: joinFn(baseDir, 'docs', 'file.txt'), mtime: 0},
+  {relative: 'index.js', basename: 'index.js', absolute: joinFn(baseDir, 'index.js'), mtime: 0},
+  {relative: 'lib', basename: 'lib', absolute: joinFn(baseDir, 'lib'), mtime: 0},
+  {
+    relative: joinFn('lib', '.gitignore'),
+    basename: '.gitignore',
+    absolute: joinFn(baseDir, 'lib', '.gitignore'),
+    mtime: 0,
+  },
+  {relative: joinFn('lib', 'index.js'), basename: 'index.js', absolute: joinFn(baseDir, 'lib', 'index.js'), mtime: 0},
+  {relative: 'README.md', basename: 'README.md', absolute: joinFn(baseDir, 'README.md'), mtime: 0},
+  {relative: 'src', basename: 'src', absolute: joinFn(baseDir, 'src'), mtime: 0},
+  {
+    relative: joinFn('src', '.yarnignore'),
+    basename: '.yarnignore',
+    absolute: joinFn(baseDir, 'src', '.yarnignore'),
+    mtime: 0,
+  },
+  {relative: joinFn('src', 'app.js'), basename: 'app.js', absolute: joinFn(baseDir, 'src', 'app.js'), mtime: 0},
+];
+
+const generateFilterOverridenGitignoresOutput = (joinFn, baseDir) => [
+  {relative: '.npmignore', basename: '.npmignore', absolute: joinFn(baseDir, '.npmignore'), mtime: 0},
+  {
+    relative: joinFn('lib', '.gitignore'),
+    basename: '.gitignore',
+    absolute: joinFn(baseDir, 'lib', '.gitignore'),
+    mtime: 0,
+  },
+  {
+    relative: joinFn('src', '.yarnignore'),
+    basename: '.yarnignore',
+    absolute: joinFn(baseDir, 'src', '.yarnignore'),
+    mtime: 0,
+  },
+];
+
 test('filterOverridenGitignores', () => {
+  const posixBaseDir = '/home/user/p';
+  const win32BaseDir = 'C:\\Users\\user\\p';
+
   expect(
-    filterOverridenGitignores([
-      {relative: '.gitignore', basename: '.gitignore', absolute: '/home/user/p/.gitignore', mtime: 0},
-      {relative: '.npmignore', basename: '.npmignore', absolute: '/home/user/p/.npmignore', mtime: 0},
-      {relative: 'docs', basename: 'lib', absolute: '/home/user/p/docs', mtime: 0},
-      {relative: 'docs/file.txt', basename: 'file.txt', absolute: '/home/user/p/docs/file.txt', mtime: 0},
-      {relative: 'index.js', basename: 'index.js', absolute: '/home/user/p/index.js', mtime: 0},
-      {relative: 'lib', basename: 'lib', absolute: '/home/user/p/lib', mtime: 0},
-      {relative: 'lib/.gitignore', basename: '.gitignore', absolute: '/home/user/p/lib/.gitignore', mtime: 0},
-      {relative: 'lib/index.js', basename: 'index.js', absolute: '/home/user/p/lib/index.js', mtime: 0},
-      {relative: 'README.md', basename: 'README.md', absolute: '/home/user/p/README.md', mtime: 0},
-      {relative: 'src', basename: 'src', absolute: '/home/user/p/src', mtime: 0},
-      {relative: 'src/.yarnignore', basename: '.yarnignore', absolute: '/home/user/p/src/.yarnignore', mtime: 0},
-      {relative: 'src/app.js', basename: 'app.js', absolute: '/home/user/p/src/app.js', mtime: 0},
-    ]),
-  ).toEqual([
-    {relative: '.npmignore', basename: '.npmignore', absolute: '/home/user/p/.npmignore', mtime: 0},
-    {relative: 'lib/.gitignore', basename: '.gitignore', absolute: '/home/user/p/lib/.gitignore', mtime: 0},
-    {relative: 'src/.yarnignore', basename: '.yarnignore', absolute: '/home/user/p/src/.yarnignore', mtime: 0},
-  ]);
+    filterOverridenGitignores(generateFilterOverridenGitignoresInput(path.posix.join, posixBaseDir), path.posix.join),
+  ).toEqual(generateFilterOverridenGitignoresOutput(path.posix.join, posixBaseDir));
+
+  expect(
+    filterOverridenGitignores(generateFilterOverridenGitignoresInput(path.win32.join, win32BaseDir), path.win32.join),
+  ).toEqual(generateFilterOverridenGitignoresOutput(path.win32.join, win32BaseDir));
 });
